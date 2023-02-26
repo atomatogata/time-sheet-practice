@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <!-- moment.js / for d3.js flat-picker -->
+    <script src="./js/moment.min.js"></script>
+    <!-- Ds.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Flat picker CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <!-- Flat picker  JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- Flat picker  日本語化 -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ja.js"></script>
+    <script src="./js/app.js" defer></script>
+  </head>
+
+  <body>
+    <div id="timeline-chart"></div>
+		<input type="text" name="datepicker" id="js-datepicker">
+	<style>
+		/* 日曜日：赤 */
+.flatpickr-calendar .flatpickr-innerContainer .flatpickr-weekdays .flatpickr-weekday:nth-child(7n + 1),
+.flatpickr-calendar .flatpickr-innerContainer .flatpickr-days .flatpickr-day:not(.flatpickr-disabled):not(.prevMonthDay):not(.nextMonthDay):nth-child(7n + 1) {
+  color: $red;
+}
+
+/* 土曜日：青 */
+.flatpickr-calendar .flatpickr-innerContainer .flatpickr-weekdays .flatpickr-weekday:nth-child(7),
+.flatpickr-calendar .flatpickr-innerContainer .flatpickr-days .flatpickr-day:not(.flatpickr-disabled):not(.prevMonthDay):not(.nextMonthDay):nth-child(7n) {
+  color: $blue;
+}
+
+/* 祝日 */
+.flatpickr-day.is-holiday{
+  background: lighten($red, 40%) !important;
+}
+
+/* 入力欄の文字列を選択させないようにしておく  */
+.flatpickr-calendar .numInput{
+  user-select: none;
+}
+
+	</style>
+  </body>
+<script type="text/javascript">
+  const fp = flatpickr('#js-datepicker', {
+    locale     : 'ja',
+    dateFormat : 'Y/m/d H:m', 
+    defaultDate: new Date(),
+		enableTime  : true,
+		minTime     : '09:00',
+    maxTime     : '18:00',
+  });
+	// 値が変更されたら、その値をchange
+	// jqueryは不使用
+	let lara = document.getElementById('js-datepicker');
+	lara.addEventListener('change', function() {
+		fp.changeMonth(1); // 1月進める
+		console.log('test');
+	});
+</script>
+</html>
