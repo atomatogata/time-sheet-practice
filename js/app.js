@@ -21,28 +21,29 @@ let dateListItem02 = new Date("2023/02/27");
 var datasets = [
   {
     date: moment(dateListItem01),
-    schedule: [
-    ],
+    schedule: [],
   },
 ];
-
+// inputのduration[]の値を取得
+let inputFieldDurationList = document.getElementsByName("duration[]");
 // inputのdatepicker[]の値を取得
 let inputFieldDateList = document.getElementsByName("datepicker[]");
-console.log(inputFieldDateList);
-inputFieldDateList.forEach(function(value,key){
-  console.log(value);
+inputFieldDateList.forEach(function (element, key) {
   // 要素をDateに変換
-  let dateListItemStart = new Date(value.value);
-  // 2時間後を設定
-  let dateListItemEnd = new Date(dateListItemStart.getTime() + 60 * 60 * 1000 * 2);
+  let dateListItemStart = new Date(element.value);
+  // scheduleのdurationを取得
+  let duration = inputFieldDurationList[key].value;
+  // durationの時間分を加算
+  let dateListItemEnd = moment(dateListItemStart).add(duration, "hours");
   // dateListに値を追加
   datasets[0].schedule.push({
     categoryNo: key,
     from: moment(dateListItemStart),
     to: moment(dateListItemEnd),
+    groupNo: element.id,
+    duration: duration,
   });
 });
-console.log(datasets);
 
 // X軸の設定
 var width = 900,
@@ -153,14 +154,11 @@ var dragEnd = function (d) {
     .attr("width", calcScheduleWidth);
 };
 
-
-
 var scheduleDrag = d3
   .drag()
   .on("start", dragStart)
   .on("drag", function (event, d) {
     var between = moment(d["to"]).diff(moment(d["from"]), "minutes");
-    console.log(between);
     var fromTime = moment(
       zoomedXScale.invert(zoomedXScale(d["from"]) + event.dx)
     );
@@ -176,7 +174,8 @@ var scheduleDrag = d3
     //Dragで変更された値を時間も含めて#js-datepicker(datetime-local)のvalueに反映させる
     var date = moment(d["from"]).format("YYYY-MM-DDTHH:mm");
     // n番目のクラスの要素に対して、valueを設定する
-    document.getElementsByClassName("js-datepicker")[d['categoryNo'] ].value = date;
+    document.getElementsByClassName("js-datepicker")[d["categoryNo"]].value =
+      date;
   })
   .on("end", dragEnd);
 
@@ -185,22 +184,45 @@ schedule
   .style("mix-blend-mode", "multiply")
   .call(scheduleDrag);
 
-// inputの内容が変更されたときに描写されたscheduleのrectSVGを更新する
-// Jqueryは不使用で
-var input = document.getElementById("js-datepicker");
-input.addEventListener("change", function () {
-  var value = new Date(input.value);
-  var newSchedule = [
-    {
-      categoryNo: 0,
-      from: moment(value),
-      to: moment(value).add(1, "hours"),
-    },
-  ];
-  dataset.schedule = newSchedule;
-  scheduleG
-    .data(dataset.schedule)
-    .select("rect")
-    .attr("x", calcScheduleX)
-    .attr("width", calcScheduleWidth);
-});
+// htmlのinput要素の値が変更された時に、スケジュールの時間を変更する
+var datePickers = document.getElementsByClassName("js-datepicker");
+for (var i = 0; i < datePickers.length; i++) {
+  datePickers[i].addEventListener("change", function (event) {
+    var date = moment(event.target.value);
+    // 同じIdのスケジュールを取得する
+    var schedule = dataset.schedule.filter(function (d) {
+      return d["groupNo"] === event.target.id;
+    })[0];
+    var between = moment(schedule["to"]).diff(
+      moment(schedule["from"]),
+      "minutes"
+    );
+    schedule["from"] = date;
+    schedule["to"] = moment(date).add(schedule["duration"], "hours");
+    // schedule["to"] = moment(date).add(between, "minutes");
+    scheduleG
+      .selectAll("rect")
+      .attr("x", calcScheduleX)
+      .attr("width", calcScheduleWidth);
+  });
+}
+// htmlのinput要素（.duration）が変更された時に、スケジュールの時間を変更する
+var durations = document.getElementsByClassName("duration");
+for (var i = 0; i < durations.length; i++) {
+  durations[i].addEventListener("change", function (event) {
+    // カスタムデータ属性の値を取得
+    var groupNo = event.target.dataset.group;
+    //同じカテゴリーnoのスケジュールを取得する
+    var schedule = dataset.schedule.filter(function (d) {
+      return d["groupNo"] === groupNo;
+    })[0];
+    schedule["duration"] = event.target.value;
+    schedule["to"] = moment(schedule["from"]).add(schedule["duration"], "hours");
+    
+    scheduleG
+      .selectAll("rect")
+      .attr("x", calcScheduleX)
+      .attr("width", calcScheduleWidth);
+  });
+}
+
