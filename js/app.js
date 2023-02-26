@@ -14,38 +14,35 @@ var category = [
 ];
 // バーの高さ（原文だと未定義？理由不明）
 let barHeight = 20;
-// input要素の値を取得
-// 時間データセット（to~と変換しないとエラーのため）
-let dateListItem01 = new Date("2023/02/26").toISOString();
-let inputFieldDateListItem = document.getElementById("js-datepicker");
-let dateListItem02 = new Date(inputFieldDateListItem.value).toISOString();
-let dateListItem03 = new Date("2023/02/26 19:00:00").toISOString();
-let dateListItem04 = new Date("2023/02/26 10:00:00").toISOString();
-let dateListItem05 = new Date("2023/02/26 14:00:00").toISOString();
-let dateListItem06 = new Date("2023/02/26 15:00:00").toISOString();
-let dateListItem07 = new Date("2023/02/26 16:00:00").toISOString();
+// // input要素の値を取得
+let dateListItem01 = new Date("2023/02/26");
+let dateListItem02 = new Date("2023/02/27");
+
 var datasets = [
   {
     date: moment(dateListItem01),
     schedule: [
-      {
-        categoryNo: 0,
-        from: moment(dateListItem02),
-        to: moment(dateListItem03),
-      },
-      {
-        categoryNo: 1,
-        from: moment(dateListItem04),
-        to: moment(dateListItem05),
-      },
-      {
-        categoryNo: 3,
-        from: moment(dateListItem06),
-        to: moment(dateListItem07),
-      },
     ],
   },
 ];
+
+// inputのdatepicker[]の値を取得
+let inputFieldDateList = document.getElementsByName("datepicker[]");
+console.log(inputFieldDateList);
+inputFieldDateList.forEach(function(value,key){
+  console.log(value);
+  // 要素をDateに変換
+  let dateListItemStart = new Date(value.value);
+  // 2時間後を設定
+  let dateListItemEnd = new Date(dateListItemStart.getTime() + 60 * 60 * 1000 * 2);
+  // dateListに値を追加
+  datasets[0].schedule.push({
+    categoryNo: key,
+    from: moment(dateListItemStart),
+    to: moment(dateListItemEnd),
+  });
+});
+console.log(datasets);
 
 // X軸の設定
 var width = 900,
@@ -156,6 +153,8 @@ var dragEnd = function (d) {
     .attr("width", calcScheduleWidth);
 };
 
+
+
 var scheduleDrag = d3
   .drag()
   .on("start", dragStart)
@@ -174,17 +173,10 @@ var scheduleDrag = d3
     d["to"] = toTime;
     d3.select(this).attr("x", calcScheduleX);
 
-		//Dragで変更された値を時間も含めて#js-datepickerのvalueにに反映させる
-		var date = d["from"];
-		var year = date.year();
-		var month = date.month() + 1;
-		var day = date.date();
-		var hour = date.hour();
-		var minute = date.minute();
-		var value = year + "/" + month + "/" + day + " " + hour + ":" + minute;
-		document.getElementById("js-datepicker").value = value;
-
-
+    //Dragで変更された値を時間も含めて#js-datepicker(datetime-local)のvalueに反映させる
+    var date = moment(d["from"]).format("YYYY-MM-DDTHH:mm");
+    // n番目のクラスの要素に対して、valueを設定する
+    document.getElementsByClassName("js-datepicker")[d['categoryNo'] ].value = date;
   })
   .on("end", dragEnd);
 
@@ -193,24 +185,22 @@ schedule
   .style("mix-blend-mode", "multiply")
   .call(scheduleDrag);
 
-	// inputの内容が変更されたときに描写されたscheduleのrectSVGを更新する
-	// Jqueryは不使用で
-	var input = document.getElementById("js-datepicker");
-	input.addEventListener("change", function () {
-		var value = new Date(input.value);
-		var newSchedule = [
-			{
-				categoryNo: 0,
-				from: moment(value),
-				to: moment(value).add(1, "hours"),
-			},
-		];
-		dataset.schedule = newSchedule;
-		scheduleG
-			.data(dataset.schedule)
-			.select("rect")
-			.attr("x", calcScheduleX)
-			.attr("width", calcScheduleWidth);
-	}
-	);
-
+// inputの内容が変更されたときに描写されたscheduleのrectSVGを更新する
+// Jqueryは不使用で
+var input = document.getElementById("js-datepicker");
+input.addEventListener("change", function () {
+  var value = new Date(input.value);
+  var newSchedule = [
+    {
+      categoryNo: 0,
+      from: moment(value),
+      to: moment(value).add(1, "hours"),
+    },
+  ];
+  dataset.schedule = newSchedule;
+  scheduleG
+    .data(dataset.schedule)
+    .select("rect")
+    .attr("x", calcScheduleX)
+    .attr("width", calcScheduleWidth);
+});
